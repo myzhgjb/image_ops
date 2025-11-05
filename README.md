@@ -14,13 +14,27 @@ pip install -r requirements.txt
 python app.py
 ```
 
-3) 命令行示例：将 `2.png` 的色彩风格迁移到 `1.png`：
+3) CLI 示例（任意两图融合/转换，均为 Python 命令，无需 bat）：
 
+- 单步骤：色彩风格迁移（`2.png` → `1.png`）
 ```bash
-python cli.py --content 1.png --style 2.png --method color --out out_color_transfer.png
+python cli.py run --content 1.png --style 2.png --method color --out out_color_from_2.png
 ```
 
-同样可用 `--method sketch|oil|cartoon|texture` 等。
+- 单步骤：金字塔纹理融合
+```bash
+python cli.py run --content 1.png --style 2.png --method texture --levels 4 --out out_texture_blend.png
+```
+
+- 单步骤：alpha 线性融合（任意两图）
+```bash
+python cli.py run --content 1.png --style 2.png --method blend --alpha 0.6 --out out_alpha_0_6.png
+```
+
+- 多步骤流水线：先做色彩风格迁移，再卡通化
+```bash
+python cli.py pipeline --content 1.png --style 2.png --steps color,cartoon --out out_color_then_cartoon.png
+```
 
 ## 功能模块
 - 基于滤波器的艺术特效：素描、油画、卡通
@@ -33,7 +47,7 @@ python cli.py --content 1.png --style 2.png --method color --out out_color_trans
 ```
 .
 ├── app.py                 # Tkinter GUI 主程序
-├── cli.py                 # 命令行入口（含 2.png -> 1.png 示例）
+├── cli.py                 # 命令行入口（支持 run/pipeline、多图融合）
 ├── batch.py               # 批处理逻辑
 ├── image_ops/
 │   ├── __init__.py

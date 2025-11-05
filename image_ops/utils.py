@@ -50,6 +50,17 @@ def resize_fit(img: np.ndarray, max_side: int = 1024) -> np.ndarray:
     return cv.resize(img, (nw, nh), interpolation=cv.INTER_AREA)
 
 
+def alpha_blend(img_a: np.ndarray, img_b: np.ndarray, alpha: float = 0.5) -> np.ndarray:
+    """简单的两图线性融合；自动缩放到相同尺寸。
+    alpha 表示 A 的权重，范围 [0,1]。
+    """
+    alpha = float(max(0.0, min(1.0, alpha)))
+    h, w = img_a.shape[:2]
+    img_b = cv.resize(img_b, (w, h), interpolation=cv.INTER_LINEAR)
+    out = cv.addWeighted(img_a.astype(np.float32), alpha, img_b.astype(np.float32), 1.0 - alpha, 0)
+    return np.clip(out, 0, 255).astype(np.uint8)
+
+
 def to_pil(img_bgr: np.ndarray) -> Image.Image:
     return Image.fromarray(cv.cvtColor(img_bgr, cv.COLOR_BGR2RGB))
 
