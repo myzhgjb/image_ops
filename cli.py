@@ -3,12 +3,13 @@ from image_ops import (
     read_image, save_image,
     sketch_effect, oil_painting_effect, cartoon_effect,
     color_transfer_lab, histogram_match_rgb,
-    pyramid_texture_blend, alpha_blend
+    pyramid_texture_blend, alpha_blend, neural_style_transfer
 )
 
 
 def run_single(content_path: str, style_path: str, method: str, out_path: str,
-               alpha: float = 0.5, levels: int = 4):
+               alpha: float = 0.5, levels: int = 4,
+               steps: int = 300, content_weight: float = 1.0, style_weight: float = 5.0):
     content = read_image(content_path)
     style = read_image(style_path) if style_path else None
 
@@ -34,6 +35,10 @@ def run_single(content_path: str, style_path: str, method: str, out_path: str,
         if style is None:
             raise ValueError('blend 方法需要 --style')
         res = alpha_blend(content, style, alpha)
+    elif method == 'neural':
+        if style is None:
+            raise ValueError('neural 方法需要 --style')
+        res = neural_style_transfer(content, style, steps=steps, content_weight=content_weight, style_weight=style_weight)
     else:
         raise ValueError('未知方法')
 
@@ -70,6 +75,10 @@ def run_pipeline(content_path: str, style_path: str, pipeline: list, out_path: s
             if style is None:
                 raise ValueError('blend 需要 --style')
             img = alpha_blend(img, style, 0.5)
+        elif m == 'neural':
+            if style is None:
+                raise ValueError('neural 需要 --style')
+            img = neural_style_transfer(img, style, steps=200)
         else:
             raise ValueError(f'未知方法 {m}')
     save_image(out_path, img)
@@ -84,9 +93,12 @@ def main():
     p1 = sub.add_parser('run', help='执行单一方法')
     p1.add_argument('--content', required=True)
     p1.add_argument('--style')
-    p1.add_argument('--method', required=True, choices=['sketch', 'oil', 'cartoon', 'color', 'hist', 'texture', 'blend'])
+    p1.add_argument('--method', required=True, choices=['sketch', 'oil', 'cartoon', 'color', 'hist', 'texture', 'blend', 'neural'])
     p1.add_argument('--alpha', type=float, default=0.5, help='blend 融合权重')
     p1.add_argument('--levels', type=int, default=4, help='texture 金字塔层数')
+    p1.add_argument('--steps', type=int, default=300, help='neural 迭代步数')
+    p1.add_argument('--content-weight', type=float, default=1.0)
+    p1.add_argument('--style-weight', type=float, default=5.0)
     p1.add_argument('--out', required=True)
 
     # 多步骤流水线
@@ -99,7 +111,17 @@ def main():
     args = parser.parse_args()
 
     if args.cmd == 'run':
-        run_single(args.content, args.style, args.method, args.out, args.alpha, args.levels)
+        run_single(
+            args.content,
+            args.style,
+            args.method,
+            args.out,
+            args.alpha,
+            args.levels,
+            args.steps,
+            args.content_weight,
+            args.style_weight,
+        )
     else:
         pipeline = [s.strip() for s in args.steps.split(',') if s.strip()]
         run_pipeline(args.content, args.style, pipeline, args.out)

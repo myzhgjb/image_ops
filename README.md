@@ -36,6 +36,17 @@ python cli.py run --content 1.png --style 2.png --method blend --alpha 0.6 --out
 python cli.py pipeline --content 1.png --style 2.png --steps color,cartoon --out out_color_then_cartoon.png
 ```
 
+### 深度学习风格迁移（可选）
+安装 PyTorch 与 torchvision 后启用（CPU 也可跑，但较慢）：
+```bash
+pip install torch torchvision -i https://pypi.tuna.tsinghua.edu.cn/simple
+```
+使用示例：
+```bash
+python cli.py run --content 1.png --style 2.png --method neural --steps 300 --style-weight 5.0 --out out_neural.png
+```
+提示：`--steps` 越大笔触越明显，先从 200~400 尝试；若显得过度，可降低 `--style-weight` 或提高 `--content-weight`。
+
 ## 功能模块
 - 基于滤波器的艺术特效：素描、油画、卡通
 - 基于传统方法的风格迁移：Lab 颜色分布匹配、直方图匹配
