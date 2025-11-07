@@ -95,7 +95,7 @@ class ImageApp(tk.Tk):
         self.var_strength = tk.IntVar(value=9)
         self.var_quant = tk.IntVar(value=24)
         self.var_alpha = tk.DoubleVar(value=0.5)
-        self.var_neural_steps = tk.IntVar(value=300)
+        self.var_neural_steps = tk.IntVar(value=100)
         self.var_content_weight = tk.DoubleVar(value=1.0)
         self.var_style_weight = tk.DoubleVar(value=5.0)
         self.var_texture_levels = tk.IntVar(value=4)
@@ -151,7 +151,7 @@ class ImageApp(tk.Tk):
             if not HAS_NEURAL:
                 ttk.Label(self.params_frame, text='需要安装 PyTorch: pip install torch torchvision').pack(anchor='w', padx=6, pady=6)
             else:
-                add('迭代步数', self.var_neural_steps, 100, 500, 10)
+                add('迭代步数', self.var_neural_steps, 50, 200, 10)
                 add_float('内容权重', self.var_content_weight, 0.5, 3.0, 0.1)
                 add_float('风格权重', self.var_style_weight, 1.0, 10.0, 0.5)
         elif method == 'neural_enhanced':

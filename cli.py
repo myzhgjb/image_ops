@@ -106,7 +106,7 @@ def main():
     p1.add_argument('--method', required=True, choices=['sketch', 'oil', 'cartoon', 'color', 'hist', 'texture', 'blend', 'neural', 'neural_enhanced'])
     p1.add_argument('--alpha', type=float, default=0.5, help='blend 融合权重')
     p1.add_argument('--levels', type=int, default=4, help='texture 金字塔层数')
-    p1.add_argument('--steps', type=int, default=300, help='neural 迭代步数')
+    p1.add_argument('--steps', type=int, default=100, help='neural 迭代步数（默认100，更快）')
     p1.add_argument('--content-weight', type=float, default=1.0)
     p1.add_argument('--style-weight', type=float, default=5.0, help='neural_enhanced 默认 1e4')
     p1.add_argument('--use-multiscale', action='store_true', default=True, help='neural_enhanced 使用多尺度')
