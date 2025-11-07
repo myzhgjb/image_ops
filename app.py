@@ -68,6 +68,11 @@ class ImageApp(tk.Tk):
 
         ttk.Button(top, text='应用', command=self.apply_effect).pack(side=tk.LEFT, padx=8)
         
+        # 叠加使用选项
+        self.use_preview_var = tk.BooleanVar(value=False)
+        use_preview_cb = ttk.Checkbutton(top, text='基于当前预览结果', variable=self.use_preview_var)
+        use_preview_cb.pack(side=tk.LEFT, padx=8)
+        
         # 状态标签
         self.status_label = ttk.Label(top, text='', foreground='blue')
         self.status_label.pack(side=tk.LEFT, padx=8)
@@ -189,7 +194,11 @@ class ImageApp(tk.Tk):
         if self.content_img is None:
             return
         method = self._get_method_name()
-        img = self.content_img
+        # 如果勾选了"基于当前预览结果"，且已有预览图，则使用预览图；否则使用原图
+        if self.use_preview_var.get() and self.preview_img is not None:
+            img = self.preview_img.copy()
+        else:
+            img = self.content_img
         try:
             if method == 'sketch':
                 res = sketch_effect(img, 'gray', self.var_blur.get(), 0, self.var_edge_low.get(), self.var_edge_high.get())
