@@ -13,15 +13,38 @@ def sketch_effect(image_bgr: np.ndarray,
     gray = cv.cvtColor(image_bgr, cv.COLOR_BGR2GRAY)
     if blur_ksize % 2 == 0:
         blur_ksize += 1
+    
+    # 使用更精细的高斯模糊，sigma 自动计算
+    if sigma <= 0:
+        sigma = 0.3 * ((blur_ksize - 1) * 0.5 - 1) + 0.8
     blur = cv.GaussianBlur(gray, (blur_ksize, blur_ksize), sigma)
+    
+    # 使用自适应阈值增强细节
+    adaptive = cv.adaptiveThreshold(blur, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY_INV, 11, 2)
+    
+    # Canny 边缘检测
     edges = make_edge_mask(blur, edge_low, edge_high)
-    inv = 255 - edges
+    
+    # 结合自适应阈值和 Canny，使用加权融合
+    combined = cv.addWeighted(adaptive.astype(np.float32), 0.6, edges.astype(np.float32), 0.4, 0)
+    combined = np.clip(combined, 0, 255).astype(np.uint8)
+    
+    # 轻微膨胀使线条更平滑
+    kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (2, 2))
+    combined = cv.morphologyEx(combined, cv.MORPH_CLOSE, kernel, iterations=1)
+    
+    # 反相得到素描效果
+    inv = 255 - combined
+    
     if mode == 'gray':
         return cv.cvtColor(inv, cv.COLOR_GRAY2BGR)
     else:
-        color = cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
-        color = cv.bilateralFilter(color, 9, 75, 75)
-        return cv.bitwise_and(color, color, mask=inv)
+        # 彩色素描：使用双边滤波保留颜色细节
+        color = cv.bilateralFilter(image_bgr, d=9, sigmaColor=75, sigmaSpace=75)
+        # 将素描线条叠加到彩色图像上
+        inv_3ch = cv.cvtColor(inv, cv.COLOR_GRAY2BGR)
+        result = cv.addWeighted(color, 0.7, inv_3ch, 0.3, 0)
+        return result
 
 
 def oil_painting_effect(image_bgr: np.ndarray,
