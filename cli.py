@@ -106,9 +106,9 @@ def main():
     p1.add_argument('--method', required=True, choices=['sketch', 'oil', 'cartoon', 'color', 'hist', 'texture', 'blend', 'neural', 'neural_enhanced'])
     p1.add_argument('--alpha', type=float, default=0.5, help='blend 融合权重')
     p1.add_argument('--levels', type=int, default=4, help='texture 金字塔层数')
-    p1.add_argument('--steps', type=int, default=100, help='neural 迭代步数（默认100，更快）')
+    p1.add_argument('--steps', type=int, default=200, help='neural 迭代步数（默认200，neural_enhanced建议500+）')
     p1.add_argument('--content-weight', type=float, default=1.0)
-    p1.add_argument('--style-weight', type=float, default=5.0, help='neural_enhanced 默认 1e4')
+    p1.add_argument('--style-weight', type=float, default=1e4, help='neural默认1e4，neural_enhanced默认2e4')
     p1.add_argument('--use-multiscale', action='store_true', default=True, help='neural_enhanced 使用多尺度')
     p1.add_argument('--no-multiscale', dest='use_multiscale', action='store_false', help='禁用多尺度')
     p1.add_argument('--init-with-style', action='store_true', help='neural_enhanced 用风格图初始化')
@@ -126,8 +126,8 @@ def main():
     if args.cmd == 'run':
         # neural_enhanced 使用不同的默认 style_weight
         style_w = args.style_weight
-        if args.method == 'neural_enhanced' and args.style_weight == 5.0:
-            style_w = 1e4
+        if args.method == 'neural_enhanced' and args.style_weight < 1000:
+            style_w = 2e4
         run_single(
             args.content,
             args.style,

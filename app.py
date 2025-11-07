@@ -95,9 +95,9 @@ class ImageApp(tk.Tk):
         self.var_strength = tk.IntVar(value=9)
         self.var_quant = tk.IntVar(value=24)
         self.var_alpha = tk.DoubleVar(value=0.5)
-        self.var_neural_steps = tk.IntVar(value=100)
+        self.var_neural_steps = tk.IntVar(value=200)
         self.var_content_weight = tk.DoubleVar(value=1.0)
-        self.var_style_weight = tk.DoubleVar(value=5.0)
+        self.var_style_weight = tk.DoubleVar(value=1e4)
         self.var_texture_levels = tk.IntVar(value=4)
         self.var_use_multiscale = tk.BooleanVar(value=True)
         self.var_init_with_style = tk.BooleanVar(value=False)
@@ -151,17 +151,17 @@ class ImageApp(tk.Tk):
             if not HAS_NEURAL:
                 ttk.Label(self.params_frame, text='需要安装 PyTorch: pip install torch torchvision').pack(anchor='w', padx=6, pady=6)
             else:
-                add('迭代步数', self.var_neural_steps, 50, 200, 10)
+                add('迭代步数', self.var_neural_steps, 100, 400, 20)
                 add_float('内容权重', self.var_content_weight, 0.5, 3.0, 0.1)
-                add_float('风格权重', self.var_style_weight, 1.0, 10.0, 0.5)
+                add_float('风格权重', self.var_style_weight, 5e3, 2e4, 1e3)
         elif method == 'neural_enhanced':
             if not HAS_NEURAL:
                 ttk.Label(self.params_frame, text='需要安装 PyTorch: pip install torch torchvision').pack(anchor='w', padx=6, pady=6)
             else:
-                add('迭代步数', self.var_neural_steps, 200, 800, 20)
+                add('迭代步数', self.var_neural_steps, 300, 1000, 50)
                 add_float('内容权重', self.var_content_weight, 0.5, 3.0, 0.1)
-                add_float('风格权重', self.var_style_weight, 1e3, 5e4, 1e3)
-                ttk.Checkbutton(self.params_frame, text='使用多尺度处理', variable=self.var_use_multiscale).pack(anchor='w', padx=6, pady=2)
+                add_float('风格权重', self.var_style_weight, 1e4, 5e4, 2e3)
+                ttk.Checkbutton(self.params_frame, text='使用多尺度处理（推荐，效果更好）', variable=self.var_use_multiscale).pack(anchor='w', padx=6, pady=2)
                 ttk.Checkbutton(self.params_frame, text='用风格图初始化（风格更强）', variable=self.var_init_with_style).pack(anchor='w', padx=6, pady=2)
         else:
             ttk.Label(self.params_frame, text='此方法无需额外参数或使用默认参数').pack(anchor='w', padx=6, pady=6)
@@ -275,8 +275,8 @@ class ImageApp(tk.Tk):
                 self.status_label.config(text='正在处理（可能需要几分钟）...')
                 self.update()
                 style_w = self.var_style_weight.get()
-                if style_w < 100:  # 如果用户设置的值太小，使用默认值
-                    style_w = 1e4
+                if style_w < 1000:  # 如果用户设置的值太小，使用默认值
+                    style_w = 2e4
                 def neural_enhanced_worker():
                     try:
                         res = neural_style_transfer_enhanced(
@@ -372,7 +372,7 @@ class ImageApp(tk.Tk):
                                                        content_weight=content_weight, 
                                                        style_weight=style_weight)
                         elif method == 'neural_enhanced' and style is not None and HAS_NEURAL:
-                            sw = style_weight if style_weight >= 100 else 1e4
+                            sw = style_weight if style_weight >= 1000 else 2e4
                             res = neural_style_transfer_enhanced(
                                 img, style, steps=neural_steps,
                                 content_weight=content_weight, style_weight=sw,
