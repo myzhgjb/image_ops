@@ -2,6 +2,40 @@
 
 ## 快速开始
 
+### 环境配置
+
+**重要：编码配置（防止中文乱码）**
+
+本项目使用UTF-8编码，为确保提交信息和中文字符正确显示，请先配置Git编码：
+
+**Windows PowerShell:**
+```powershell
+# 执行配置脚本
+.\setup_git_encoding.ps1
+
+# 或手动配置
+git config i18n.commitencoding utf-8
+git config i18n.logoutputencoding utf-8
+git config core.quotepath false
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+```
+
+**Git Bash / Linux / Mac:**
+```bash
+# 执行配置脚本
+bash setup_git_encoding.sh
+
+# 或手动配置
+git config i18n.commitencoding utf-8
+git config i18n.logoutputencoding utf-8
+git config core.quotepath false
+export LANG=zh_CN.UTF-8
+```
+
+详细说明请参考 [ENCODING_FIX_SUMMARY.md](ENCODING_FIX_SUMMARY.md)
+
+### 安装和运行
+
 1) 安装依赖（已在虚拟环境中）：
 
 ```bash
@@ -62,10 +96,15 @@ python cli.py run --content 1.png --style 2.png --method neural --steps 300 --st
 ├── batch.py               # 批处理逻辑
 ├── image_ops/
 │   ├── __init__.py
+│   ├── encoding.py        # UTF-8编码支持（防止控制台乱码）
 │   ├── filters.py         # 素描、油画、卡通
 │   ├── color_transfer.py  # Lab/直方图颜色风格迁移
 │   ├── texture_transfer.py# 拉普拉斯金字塔融合
 │   └── utils.py           # IO/通用工具
+├── .gitattributes         # Git文件编码配置
+├── setup_git_encoding.ps1 # Git编码配置脚本（Windows）
+├── setup_git_encoding.sh  # Git编码配置脚本（Linux/Mac）
+├── ENCODING_FIX_SUMMARY.md # 编码问题修复总结
 ├── requirements.txt
 └── README.md
 ```
