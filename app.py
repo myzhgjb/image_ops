@@ -16,11 +16,12 @@ from image_ops import (
 
 # 尝试导入神经风格迁移，如果未安装 PyTorch 则设为 None
 try:
-    from image_ops.deep_style import neural_style_transfer
+    from image_ops.deep_style import neural_style_transfer, neural_style_transfer_enhanced
     HAS_NEURAL = True
 except ImportError:
     HAS_NEURAL = False
     neural_style_transfer = None
+    neural_style_transfer_enhanced = None
 
 
 class ImageApp(tk.Tk):
@@ -62,6 +63,7 @@ class ImageApp(tk.Tk):
         ]
         if HAS_NEURAL:
             method_list.append('neural (深度学习风格迁移)')
+            method_list.append('neural_enhanced (增强神经风格迁移)')
         method_box = ttk.Combobox(top, textvariable=self.method_var, state='readonly', values=method_list)
         method_box.pack(side=tk.LEFT)
         method_box.bind('<<ComboboxSelected>>', lambda e: self._update_params_panel())
@@ -97,6 +99,8 @@ class ImageApp(tk.Tk):
         self.var_content_weight = tk.DoubleVar(value=1.0)
         self.var_style_weight = tk.DoubleVar(value=5.0)
         self.var_texture_levels = tk.IntVar(value=4)
+        self.var_use_multiscale = tk.BooleanVar(value=True)
+        self.var_init_with_style = tk.BooleanVar(value=False)
 
     def _get_method_name(self):
         """从带中文说明的方法名中提取实际方法名"""
@@ -150,6 +154,15 @@ class ImageApp(tk.Tk):
                 add('迭代步数', self.var_neural_steps, 100, 500, 10)
                 add_float('内容权重', self.var_content_weight, 0.5, 3.0, 0.1)
                 add_float('风格权重', self.var_style_weight, 1.0, 10.0, 0.5)
+        elif method == 'neural_enhanced':
+            if not HAS_NEURAL:
+                ttk.Label(self.params_frame, text='需要安装 PyTorch: pip install torch torchvision').pack(anchor='w', padx=6, pady=6)
+            else:
+                add('迭代步数', self.var_neural_steps, 200, 800, 20)
+                add_float('内容权重', self.var_content_weight, 0.5, 3.0, 0.1)
+                add_float('风格权重', self.var_style_weight, 1e3, 5e4, 1e3)
+                ttk.Checkbutton(self.params_frame, text='使用多尺度处理', variable=self.var_use_multiscale).pack(anchor='w', padx=6, pady=2)
+                ttk.Checkbutton(self.params_frame, text='用风格图初始化（风格更强）', variable=self.var_init_with_style).pack(anchor='w', padx=6, pady=2)
         else:
             ttk.Label(self.params_frame, text='此方法无需额外参数或使用默认参数').pack(anchor='w', padx=6, pady=6)
 
@@ -251,6 +264,36 @@ class ImageApp(tk.Tk):
                         self.after(0, lambda: self.status_label.config(text=''))
                 threading.Thread(target=neural_worker, daemon=True).start()
                 return
+            elif method == 'neural_enhanced':
+                if not HAS_NEURAL:
+                    messagebox.showerror('错误', '需要安装 PyTorch: pip install torch torchvision')
+                    return
+                if self.style_img is None:
+                    messagebox.showwarning('缺少风格图', '请先加载风格图')
+                    return
+                # 增强神经风格迁移较慢，在后台线程运行
+                self.status_label.config(text='正在处理（可能需要几分钟）...')
+                self.update()
+                style_w = self.var_style_weight.get()
+                if style_w < 100:  # 如果用户设置的值太小，使用默认值
+                    style_w = 1e4
+                def neural_enhanced_worker():
+                    try:
+                        res = neural_style_transfer_enhanced(
+                            img, self.style_img,
+                            steps=self.var_neural_steps.get(),
+                            content_weight=self.var_content_weight.get(),
+                            style_weight=style_w,
+                            use_multiscale=self.var_use_multiscale.get(),
+                            init_with_style=self.var_init_with_style.get()
+                        )
+                        self.after(0, lambda: self._show_preview(res))
+                        self.after(0, lambda: self.status_label.config(text=''))
+                    except Exception as e:
+                        self.after(0, lambda: messagebox.showerror('错误', str(e)))
+                        self.after(0, lambda: self.status_label.config(text=''))
+                threading.Thread(target=neural_enhanced_worker, daemon=True).start()
+                return
             else:
                 res = img
             self._show_preview(res)
@@ -298,6 +341,8 @@ class ImageApp(tk.Tk):
         neural_steps = self.var_neural_steps.get()
         content_weight = self.var_content_weight.get()
         style_weight = self.var_style_weight.get()
+        use_multiscale = self.var_use_multiscale.get()
+        init_with_style = self.var_init_with_style.get()
         style = self.style_img
 
         def worker():
@@ -326,6 +371,13 @@ class ImageApp(tk.Tk):
                             res = neural_style_transfer(img, style, steps=neural_steps, 
                                                        content_weight=content_weight, 
                                                        style_weight=style_weight)
+                        elif method == 'neural_enhanced' and style is not None and HAS_NEURAL:
+                            sw = style_weight if style_weight >= 100 else 1e4
+                            res = neural_style_transfer_enhanced(
+                                img, style, steps=neural_steps,
+                                content_weight=content_weight, style_weight=sw,
+                                use_multiscale=use_multiscale, init_with_style=init_with_style
+                            )
                         else:
                             res = img
                         save_image(os.path.join(out_dir, name), res)
